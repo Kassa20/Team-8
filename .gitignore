@@ -1,0 +1,30 @@
+# Node dependencies
+**/node_modules/
+address-system/backend/node_modules/
+address-system/frontend/node_modules/
+
+# Build outputs
+address-system/frontend/build/
+address-system/backend/dist/
+
+# Logs
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+pnpm-debug.log*
+logs/
+*.log
+
+# Environment files (secrets)
+*.env
+.env.local
+.env.development.local
+.env.test.local
+.env.production.local
+
+# Editor / OS junk
+.DS_Store
+Thumbs.db
+.vscode/
+.idea/
+

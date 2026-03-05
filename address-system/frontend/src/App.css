@@ -1,0 +1,159 @@
+.layout {
+  min-height: 100vh;
+  background: #0f172a;
+  color: #e5e7eb;
+  padding: 24px;
+  box-sizing: border-box;
+}
+
+.header {
+  max-width: 1200px;
+  margin: 0 auto 24px;
+}
+
+.header h1 {
+  margin: 0;
+  font-size: 2.4rem;
+}
+
+.subtitle {
+  margin-top: 8px;
+  color: #9ca3af;
+}
+
+.main {
+  max-width: 1200px;
+  margin: 0 auto;
+  display: grid;
+  grid-template-columns: 1.1fr 1.4fr;
+  gap: 24px;
+}
+
+.left-panel,
+.right-panel {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.card {
+  background: #020617;
+  border-radius: 12px;
+  padding: 16px 20px;
+  box-shadow: 0 18px 40px rgba(15, 23, 42, 0.8);
+  border: 1px solid #1f2937;
+}
+
+.card h2 {
+  margin-top: 0;
+  margin-bottom: 8px;
+}
+
+.form-group {
+  display: flex;
+  flex-direction: column;
+  margin-bottom: 12px;
+}
+
+.form-group label {
+  font-size: 0.9rem;
+  margin-bottom: 4px;
+  color: #e5e7eb;
+}
+
+.input {
+  border-radius: 8px;
+  border: 1px solid #4b5563;
+  padding: 8px 10px;
+  background: #020617;
+  color: #e5e7eb;
+  outline: none;
+}
+
+.input:focus {
+  border-color: #6366f1;
+  box-shadow: 0 0 0 1px #6366f1;
+}
+
+.button {
+  border-radius: 999px;
+  padding: 8px 16px;
+  border: 1px solid #4b5563;
+  background: #020617;
+  color: #e5e7eb;
+  cursor: pointer;
+}
+
+.button.primary {
+  background: linear-gradient(to right, #6366f1, #8b5cf6);
+  border-color: transparent;
+}
+
+.button:disabled {
+  opacity: 0.6;
+  cursor: default;
+}
+
+.hint {
+  font-size: 0.85rem;
+  color: #9ca3af;
+}
+
+.error {
+  background: #7f1d1d;
+  color: #fee2e2;
+  padding: 8px 10px;
+  border-radius: 8px;
+  margin-bottom: 10px;
+  font-size: 0.85rem;
+}
+
+.required {
+  color: #f97316;
+  margin-left: 4px;
+}
+
+.search-form {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 8px;
+  margin-bottom: 12px;
+}
+
+.results-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 0.9rem;
+}
+
+.results-table th,
+.results-table td {
+  border-bottom: 1px solid #1f2937;
+  padding: 8px 6px;
+  text-align: left;
+}
+
+.results-table th {
+  color: #9ca3af;
+  font-weight: 500;
+}
+
+.address-chip {
+  display: inline-block;
+  background: #020617;
+  border-radius: 999px;
+  padding: 2px 8px;
+  border: 1px solid #1f2937;
+  margin-right: 4px;
+  margin-bottom: 4px;
+}
+
+@media (max-width: 900px) {
+  .main {
+    grid-template-columns: 1fr;
+  }
+
+  .search-form {
+    grid-template-columns: 1fr 1fr;
+  }
+}
