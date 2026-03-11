@@ -1,0 +1,20 @@
+@startuml
+!include https://raw.githubusercontent.com/plantuml-stdlib/C4-PlantUML/master/C4_Container.puml
+
+title Global Address Management System - Container
+
+Person(user, "User")
+
+System_Boundary(s1, "Address System") {
+  Container(web, "Frontend Web App", "React", "Dynamic country-specific forms and search UI")
+  Container(api, "Backend API", "Node.js + Express", "REST API, validation, normalization, Swagger")
+}
+
+ContainerDb(db, "Database", "MongoDB", "Countries + Addresses with indexes")
+
+Rel(user, web, "Uses", "HTTPS")
+Rel(web, api, "Calls REST APIs", "HTTP/JSON")
+Rel(api, db, "Reads/Writes", "Mongoose")
+
+@enduml
+

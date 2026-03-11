@@ -8,6 +8,11 @@ const AddressSchema = new mongoose.Schema(
       type: Object,
       required: true,
     },
+    normalized: {
+      type: String,
+      required: true,
+      index: true,
+    },
     createdAt: {
       type: Date,
       default: Date.now,
@@ -21,6 +26,9 @@ const AddressSchema = new mongoose.Schema(
 
 // Index for nested city field inside address object
 AddressSchema.index({ "address.city": 1 });
+AddressSchema.index({ country: 1, name: 1, createdAt: -1 });
+AddressSchema.index({ country: 1, normalized: 1 });
+AddressSchema.index({ normalized: "text", name: "text" });
 
 // TODO: Add advanced search optimization indexes
 
