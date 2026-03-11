@@ -1,0 +1,18 @@
+@startuml
+!include https://raw.githubusercontent.com/plantuml-stdlib/C4-PlantUML/master/C4_Deployment.puml
+
+title Global Address Management System - Deployment
+
+Deployment_Node(dev, "Developer Machine / Cloud VM", "Docker") {
+  Deployment_Node(docker, "Docker Engine") {
+    Container(frontend, "Frontend Container", "Nginx + static build", "Serves React build")
+    Container(backend, "Backend Container", "Node.js", "Express API on :5000")
+    ContainerDb(mongo, "MongoDB Container", "MongoDB", "Data storage on :27017")
+  }
+}
+
+Rel(frontend, backend, "API calls", "HTTP/JSON")
+Rel(backend, mongo, "Reads/Writes", "Mongo wire protocol")
+
+@enduml
+

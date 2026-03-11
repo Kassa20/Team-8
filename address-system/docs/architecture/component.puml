@@ -1,0 +1,30 @@
+@startuml
+!include https://raw.githubusercontent.com/plantuml-stdlib/C4-PlantUML/master/C4_Component.puml
+
+title Global Address Management System - Component (Backend)
+
+Container(api, "Backend API", "Express", "REST API")
+
+Component(countryController, "Country Controller", "Express Controller", "Handles country list/schema requests")
+Component(addressController, "Address Controller", "Express Controller", "Handles create/search/get/cross-search")
+Component(seedController, "Seed Controller", "Express Controller", "Generates and inserts synthetic data")
+
+Component(addressService, "Address Service", "Service", "Validation + normalization + search orchestration")
+Component(countryService, "Country Service", "Service", "Country schema cache + defaults")
+Component(validationService, "Validation Service", "Service", "Zod validation based on country schema")
+Component(seedService, "Seed Service", "Service", "Generates multi-country addresses")
+
+Component(addressRepo, "Address Repository", "Repository", "DB access for Address")
+Component(countryRepo, "Country Repository", "Repository", "DB access for Country")
+
+Rel(countryController, countryService, "Uses")
+Rel(addressController, addressService, "Uses")
+Rel(seedController, seedService, "Uses")
+
+Rel(addressService, validationService, "Uses")
+Rel(addressService, addressRepo, "Uses")
+Rel(countryService, countryRepo, "Uses")
+Rel(seedService, addressRepo, "Uses")
+
+@enduml
+

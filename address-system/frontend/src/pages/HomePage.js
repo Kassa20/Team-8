@@ -12,18 +12,20 @@ const HomePage = () => {
   };
 
   return (
-    <div className="layout">
-      <header className="header">
-        <h1>Address Management System</h1>
-        <p className="subtitle">
+    <div className="min-h-screen bg-slate-950 text-slate-100">
+      <header className="mx-auto max-w-6xl px-6 py-8">
+        <h1 className="text-3xl font-semibold tracking-tight">
+          Global Address Management System
+        </h1>
+        <p className="mt-2 text-sm text-slate-400">
           Manage country-specific address formats and search stored addresses.
         </p>
       </header>
 
-      <main className="main">
-        <section className="left-panel">
-          <div className="card">
-            <h2>Select Country</h2>
+      <main className="mx-auto grid max-w-6xl grid-cols-1 gap-6 px-6 pb-10 lg:grid-cols-2">
+        <section className="flex flex-col gap-4">
+          <div className="rounded-xl border border-slate-800 bg-slate-900/40 p-4 shadow">
+            <h2 className="text-lg font-semibold">Select Country</h2>
             <CountrySelector value={country} onChange={setCountry} />
           </div>
           <DynamicAddressForm
@@ -32,7 +34,7 @@ const HomePage = () => {
           />
         </section>
 
-        <section className="right-panel">
+        <section>
           <AddressSearch refreshToken={refreshToken} />
         </section>
       </main>

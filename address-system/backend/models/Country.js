@@ -5,6 +5,9 @@ const CountryFieldSchema = new mongoose.Schema(
     name: { type: String, required: true },
     type: { type: String, required: true },
     required: { type: Boolean, default: false },
+    options: { type: [String], default: undefined },
+    defaultValue: { type: String, default: undefined },
+    pattern: { type: String, default: undefined },
   },
   { _id: false }
 );

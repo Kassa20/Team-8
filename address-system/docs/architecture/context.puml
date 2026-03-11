@@ -1,0 +1,16 @@
+@startuml
+!include https://raw.githubusercontent.com/plantuml-stdlib/C4-PlantUML/master/C4_Context.puml
+
+title Global Address Management System - Context
+
+Person(user, "User", "Creates and searches postal addresses")
+
+System(addressSystem, "Global Address Management System", "Dynamic address entry + validation + search")
+
+System_Ext(mongo, "MongoDB", "Stores addresses and country schemas")
+
+Rel(user, addressSystem, "Uses via web browser")
+Rel(addressSystem, mongo, "Reads/Writes", "Mongoose")
+
+@enduml
+

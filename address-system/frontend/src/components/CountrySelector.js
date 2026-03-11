@@ -24,12 +24,18 @@ const CountrySelector = ({ value, onChange }) => {
   }, []);
 
   return (
-    <div className="form-group">
-      <label htmlFor="country">Country</label>
-      {error && <div className="error">{error}</div>}
+    <div className="mt-3">
+      <label htmlFor="country" className="block text-sm font-medium text-slate-200">
+        Country
+      </label>
+      {error && (
+        <div className="mt-2 rounded-lg border border-red-900/60 bg-red-950/40 px-3 py-2 text-sm text-red-200">
+          {error}
+        </div>
+      )}
       <select
         id="country"
-        className="input"
+        className="mt-2 w-full rounded-lg border border-slate-700 bg-slate-950 px-3 py-2 text-slate-100 outline-none focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500 disabled:opacity-60"
         value={value}
         onChange={(e) => onChange(e.target.value)}
         disabled={loading || countries.length === 0}

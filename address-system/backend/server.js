@@ -4,6 +4,7 @@ const cors = require("cors");
 const dotenv = require("dotenv");
 const countryRoutes = require("./routes/countryRoutes");
 const addressRoutes = require("./routes/addressRoutes");
+const seedRoutes = require("./routes/seedRoutes");
 const swaggerUi = require("swagger-ui-express");
 const swaggerSpec = require("./docs/swagger");
 const connectDB = require("./config/db");
@@ -33,6 +34,11 @@ connectDB().then(() => {
 // Routes
 app.use("/api/countries", countryRoutes);
 app.use("/api/addresses", addressRoutes);
+app.use("/api/seed", seedRoutes);
+
+// Compatibility aliases (spec without /api prefix)
+app.use("/addresses", addressRoutes);
+app.use("/seed", seedRoutes);
 
 // Swagger docs
 app.use("/api-docs", swaggerUi.serve, swaggerUi.setup(swaggerSpec));

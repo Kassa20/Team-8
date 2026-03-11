@@ -1,9 +1,9 @@
-const Country = require("../models/Country");
+const { listCountries, getCountrySchema } = require("../services/countryService");
 
 // Get list of all countries
 exports.getCountries = async (req, res) => {
   try {
-    const countries = await Country.find({}, { _id: 0, __v: 0 }).sort({ name: 1 });
+    const countries = await listCountries();
     res.json(countries);
   } catch (error) {
     res.status(500).json({ message: "Failed to fetch countries" });
@@ -14,19 +14,13 @@ exports.getCountries = async (req, res) => {
 exports.getCountrySchema = async (req, res) => {
   try {
     const { code } = req.params;
-    const country = await Country.findOne(
-      { code: code.toUpperCase() },
-      { _id: 0, __v: 0 }
-    );
+    const country = await getCountrySchema(code);
 
     if (!country) {
       return res.status(404).json({ message: "Country not found" });
     }
 
-    res.json({
-      code: country.code,
-      fields: country.fields,
-    });
+    res.json(country);
   } catch (error) {
     res.status(500).json({ message: "Failed to fetch country schema" });
   }
