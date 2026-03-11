@@ -26,6 +26,23 @@ async function ensureDefaultCountries() {
         { name: "postalCode", type: "text", required: true },
       ],
     },
+    {
+  code: "CN",
+  name: "China",
+  fields: [
+    { name: "province", type: "text", required: true },
+    { name: "city", type: "text", required: true },
+    { name: "district", type: "text", required: true },
+    { name: "street", type: "text", required: true },
+    { 
+      name: "postalCode", 
+      type: "text", 
+      required: true,
+      // China postal codes are 6 digits, for Validation purposes
+      pattern: "^[0-9]{6}$" 
+    },
+  ],
+},
   ];
 
   await Country.insertMany(defaults);
