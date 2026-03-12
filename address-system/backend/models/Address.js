@@ -19,8 +19,12 @@ const AddressSchema = new mongoose.Schema(
   }
 );
 
-// Index for nested city field inside address object
-AddressSchema.index({ "address.city": 1 });
+// Index for nested city field inside address object// might need change
+AddressSchema.index({ country: 1, name: 1 });
+AddressSchema.index({ country: 1, "address.street": 1 });
+AddressSchema.index({ country: 1, "address.city": 1 });
+AddressSchema.index({ country: 1, "address.state": 1 });
+
 
 // TODO: Add advanced search optimization indexes
 

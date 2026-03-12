@@ -59,6 +59,8 @@ router.post("/", addressController.createAddress);
  *         description: List of matching addresses
  */
 router.get("/search", addressController.searchAddresses);
+router.get("/options", addressController.getAddressOptions);
+router.get("/resolve", addressController.resolveAddress);
 
 module.exports = router;
 

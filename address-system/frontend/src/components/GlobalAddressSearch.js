@@ -1,7 +1,7 @@
 import React, { useEffect, useState } from "react";
 import { searchAddresses } from "../services/api";
 
-const AddressSearch = ({ refreshToken }) => {
+const GlobalAddressSearch = ({ refreshToken }) => {
   const [query, setQuery] = useState({ name: "", city: "", country: "" });
   const [results, setResults] = useState([]);
   const [loading, setLoading] = useState(false);
@@ -39,7 +39,7 @@ const AddressSearch = ({ refreshToken }) => {
 
   return (
     <div className="card">
-      <h2> Local Search Addresses</h2>
+      <h2> Global Search Addresses</h2>
       <form className="search-form" onSubmit={handleSubmit}>
         <input
           className="input"
@@ -100,5 +100,5 @@ const AddressSearch = ({ refreshToken }) => {
   );
 };
 
-export default AddressSearch;
+export default GlobalAddressSearch;
 

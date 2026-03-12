@@ -8,6 +8,7 @@ const swaggerUi = require("swagger-ui-express");
 const swaggerSpec = require("./docs/swagger");
 const connectDB = require("./config/db");
 const { ensureDefaultCountries } = require("./services/countryService");
+const { ensureDefaultAddresses } = require("./services/addressService");
 
 dotenv.config();
 
@@ -28,6 +29,11 @@ connectDB().then(() => {
     // eslint-disable-next-line no-console
     console.warn("Failed to ensure default countries");
   });
+  ensureDefaultAddresses().catch((err) => {
+    console.warn("Failed to ensure default addresses");
+    console.error(err);
+  });
+
 });
 
 // Routes

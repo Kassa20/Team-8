@@ -1,37 +1,242 @@
-import React, { useEffect, useState } from "react";
-import { fetchCountrySchema, createAddress } from "../services/api";
+import React, { useEffect, useRef, useState } from "react";
+import CreatableSelect from "react-select/creatable";
+import {
+  fetchCountrySchema,
+  createAddress,
+  fetchAddressOptions,
+  resolveAddress,
+} from "../services/api";
 
 const DynamicAddressForm = ({ selectedCountry, onCreated }) => {
   const [schema, setSchema] = useState([]);
   const [name, setName] = useState("");
+  const [nameOptions, setNameOptions] = useState([]);
   const [fields, setFields] = useState({});
+  const [fieldOptions, setFieldOptions] = useState({});
+  const [loadingFields, setLoadingFields] = useState({});
   const [error, setError] = useState("");
   const [submitting, setSubmitting] = useState(false);
+  const debounceTimers = useRef({});
+
 
   useEffect(() => {
     if (!selectedCountry) {
       setSchema([]);
       setFields({});
+      setFieldOptions({});
+      setName("");
+      setNameOptions([]);
       return;
     }
+
     const loadSchema = async () => {
       try {
+        setError("");
         const res = await fetchCountrySchema(selectedCountry);
-        setSchema(res.data?.fields || []);
-        const initial = {};
-        (res.data?.fields || []).forEach((f) => {
-          initial[f.name] = "";
+        const loadedFields = (res.data?.fields || []).filter(
+          (field) => field.name !== "name" && field.name !== "country"
+        );
+        setSchema(loadedFields);
+
+        const initialFields = {};
+        const initialOptions = {};
+
+        loadedFields.forEach((field) => {
+          initialFields[field.name] = field.defaultValue || "";
+
+          if (field.source === "static") {
+            initialOptions[field.name] = (field.options || []).map((option) =>
+              typeof option === "string"
+                ? { value: option, label: option }
+                : { value: option.value, label: option.label }
+            );
+          } else {
+            initialOptions[field.name] = [];
+          }
         });
-        setFields(initial);
+
+        setFields(initialFields);
+        setFieldOptions(initialOptions);
       } catch (err) {
         console.error("Failed to load schema", err);
+        setError("Failed to load address form.");
       }
     };
+
     loadSchema();
+
+    return () => {
+      const timers = debounceTimers.current;
+      Object.values(timers).forEach((timer) => clearTimeout(timer));
+    };
   }, [selectedCountry]);
 
-  const handleChange = (field, value) => {
-    setFields((prev) => ({ ...prev, [field]: value }));
+  const debounceFetch = (key, fn, delay = 300) => {
+    if (debounceTimers.current[key]) {
+      clearTimeout(debounceTimers.current[key]);
+    }
+
+    debounceTimers.current[key] = setTimeout(() => {
+      fn();
+    }, delay);
+  };
+
+  const getDirectDependents = (fieldName) => {
+    return schema
+      .filter((field) => (field.dependsOn || []).includes(fieldName))
+      .map((field) => field.name);
+  };
+
+  const clearDependentBranch = (fieldName, nextFields, nextOptions) => {
+    nextFields[fieldName] = "";
+    nextOptions[fieldName] = [];
+
+    const children = getDirectDependents(fieldName);
+    children.forEach((child) =>
+      clearDependentBranch(child, nextFields, nextOptions)
+    );
+  };
+
+  const isFieldDisabled = (field) => {
+    if (!field.dependsOn || field.dependsOn.length === 0) return false;
+
+    return field.dependsOn.some((dep) => {
+      if (dep === "name") return !String(name || "").trim();
+      return !String(fields[dep] || "").trim();
+    });
+  };
+
+  const loadNameOptions = async (inputValue = "") => {
+    if (!selectedCountry) return;
+
+    try {
+      setLoadingFields((prev) => ({ ...prev, name: true }));
+
+      const res = await fetchAddressOptions({
+        country: selectedCountry,
+        field: "name",
+        q: inputValue,
+      });
+
+      const options = (res.data?.options || []).map((option) => ({
+        value: option,
+        label: option,
+      }));
+
+      setNameOptions(options);
+    } catch (err) {
+      console.error("Failed to load name options", err);
+    } finally {
+      setLoadingFields((prev) => ({ ...prev, name: false }));
+    }
+  };
+
+  const loadFieldOptions = async (field, inputValue = "") => {
+    if (!selectedCountry || field.source !== "lookup") return;
+
+    const params = {
+      country: selectedCountry,
+      field: field.name,
+      q: inputValue,
+    };
+
+    (field.dependsOn || []).forEach((dep) => {
+      if (dep === "name") {
+        if (name) params.name = name;
+      } else if (fields[dep]) {
+        params[dep] = fields[dep];
+      }
+    });
+
+    try {
+      setLoadingFields((prev) => ({ ...prev, [field.name]: true }));
+
+      const res = await fetchAddressOptions(params);
+      const options = (res.data?.options || []).map((option) => ({
+        value: option,
+        label: option,
+      }));
+
+      setFieldOptions((prev) => ({
+        ...prev,
+        [field.name]: options,
+      }));
+    } catch (err) {
+      console.error(`Failed to load options for ${field.name}`, err);
+    } finally {
+      setLoadingFields((prev) => ({ ...prev, [field.name]: false }));
+    }
+  };
+
+  const tryResolveZip = async (nextFields) => {
+    const zipField = schema.find(
+      (field) => field.name === "zip" && field.autoFill
+    );
+    if (!zipField) return;
+
+    const requiredDeps = zipField.dependsOn || [];
+    const hasAllDeps = requiredDeps.every((dep) => {
+      if (dep === "name") return !!String(name || "").trim();
+      return !!String(nextFields[dep] || "").trim();
+    });
+
+    if (!hasAllDeps) return;
+
+    const params = { country: selectedCountry, name };
+
+    requiredDeps.forEach((dep) => {
+      if (dep !== "name") {
+        params[dep] = nextFields[dep];
+      }
+    });
+
+    try {
+      setLoadingFields((prev) => ({ ...prev, zip: true }));
+      const res = await resolveAddress(params);
+      const zip = res.data?.zip || "";
+
+      if (zip) {
+        setFields((prev) => ({
+          ...prev,
+          zip,
+        }));
+      }
+    } catch (err) {
+      console.error("Failed to resolve zip", err);
+    } finally {
+      setLoadingFields((prev) => ({ ...prev, zip: false }));
+    }
+  };
+
+  const handleNameChange = (value) => {
+    const nextFields = { ...fields };
+    const nextOptions = { ...fieldOptions };
+
+    setName(value);
+
+    schema
+      .filter((field) => (field.dependsOn || []).includes("name"))
+      .forEach((field) =>
+        clearDependentBranch(field.name, nextFields, nextOptions)
+      );
+
+    setFields(nextFields);
+    setFieldOptions(nextOptions);
+  };
+
+  const handleFieldChange = async (fieldName, value) => {
+    const nextFields = { ...fields, [fieldName]: value };
+    const nextOptions = { ...fieldOptions };
+
+    const dependents = getDirectDependents(fieldName);
+    dependents.forEach((child) =>
+      clearDependentBranch(child, nextFields, nextOptions)
+    );
+
+    setFields(nextFields);
+    setFieldOptions(nextOptions);
+
+    await tryResolveZip(nextFields);
   };
 
   const handleSubmit = async (e) => {
@@ -42,9 +247,11 @@ const DynamicAddressForm = ({ selectedCountry, onCreated }) => {
       setError("Name is required.");
       return;
     }
+
     const missingRequired = schema.filter(
-      (f) => f.required && !fields[f.name]?.trim()
+      (field) => field.required && !String(fields[field.name] || "").trim()
     );
+
     if (missingRequired.length > 0) {
       setError("Please fill all required address fields.");
       return;
@@ -52,19 +259,35 @@ const DynamicAddressForm = ({ selectedCountry, onCreated }) => {
 
     try {
       setSubmitting(true);
-      await createAddress({
+
+      const res = await createAddress({
         name,
         country: selectedCountry,
         address: fields,
       });
+
       setName("");
-      setFields(
-        schema.reduce((acc, f) => {
-          acc[f.name] = "";
-          return acc;
-        }, {})
-      );
-      if (onCreated) onCreated();
+      setNameOptions([]);
+
+      const resetFields = {};
+      const resetOptions = {};
+
+      schema.forEach((field) => {
+        resetFields[field.name] = field.defaultValue || "";
+        resetOptions[field.name] =
+          field.source === "static"
+            ? (field.options || []).map((option) =>
+              typeof option === "string"
+                ? { value: option, label: option }
+                : { value: option.value, label: option.label }
+            )
+            : [];
+      });
+
+      setFields(resetFields);
+      setFieldOptions(resetOptions);
+
+      if (onCreated) onCreated(res.data);
     } catch (err) {
       console.error("Failed to create address", err);
       setError("Failed to save address. Please try again.");
@@ -80,41 +303,145 @@ const DynamicAddressForm = ({ selectedCountry, onCreated }) => {
   return (
     <form className="card" onSubmit={handleSubmit}>
       <h2>Add Address</h2>
+
       {error && <div className="error">{error}</div>}
+
       <div className="form-group">
-        <label htmlFor="name">Name</label>
-        <input
-          id="name"
-          className="input"
-          value={name}
-          onChange={(e) => setName(e.target.value)}
-          placeholder="Full name"
+        <label htmlFor="name">
+          Name
+          <span className="required">*</span>
+        </label>
+        <CreatableSelect
+          className="address-select"
+          classNamePrefix="address-select"
+          inputId="name"
+          options={nameOptions}
+          value={name ? { value: name, label: name } : null}
+          onFocus={() => loadNameOptions("")}
+          onMenuOpen={() => loadNameOptions("")}
+          onInputChange={(inputValue, meta) => {
+            if (meta.action === "input-change") {
+              debounceFetch("name", () => loadNameOptions(inputValue));
+            }
+          }}
+          onChange={(selected) =>
+            handleNameChange(selected ? selected.value : "")
+          }
+          onCreateOption={(inputValue) => handleNameChange(inputValue)}
+          placeholder="Select or type full name"
+          isClearable
+          isLoading={!!loadingFields.name}
+          openMenuOnFocus
+          openMenuOnClick
+          formatCreateLabel={(inputValue) => `Use "${inputValue}"`}
+          noOptionsMessage={() =>
+            loadingFields.name ? "Loading..." : "No matching names"
+          }
+          filterOption={(candidate, inputValue) => {
+            if (!inputValue) return true;
+            return candidate.label
+              .toLowerCase()
+              .includes(inputValue.toLowerCase());
+          }}
         />
       </div>
 
-      {schema.map((field) => (
-        <div className="form-group" key={field.name}>
-          <label htmlFor={field.name}>
-            {field.name}
-            {field.required && <span className="required">*</span>}
-          </label>
-          <input
-            id={field.name}
-            className="input"
-            type="text"
-            value={fields[field.name] || ""}
-            onChange={(e) => handleChange(field.name, e.target.value)}
-            placeholder={field.name}
-          />
-        </div>
-      ))}
+      {schema.map((field) => {
+        const currentValue = fields[field.name] || "";
+        const options = fieldOptions[field.name] || [];
+        const selectedOption = currentValue
+          ? { value: currentValue, label: currentValue }
+          : null;
+        const disabled = isFieldDisabled(field);
+
+        return (
+          <div className="form-group" key={field.name}>
+            <label htmlFor={field.name}>
+              {field.label || field.name}
+              {field.required && <span className="required">*</span>}
+            </label>
+
+            {field.type === "select" ? (
+              <CreatableSelect
+                className="address-select"
+                classNamePrefix="address-select"
+                inputId={field.name}
+                options={options}
+                value={selectedOption}
+                onFocus={() => {
+                  if (!disabled && field.source === "lookup") {
+                    loadFieldOptions(field, "");
+                  }
+                }}
+                onMenuOpen={() => {
+                  if (!disabled && field.source === "lookup") {
+                    loadFieldOptions(field, "");
+                  }
+                }}
+                onInputChange={(inputValue, meta) => {
+                  if (
+                    !disabled &&
+                    field.source === "lookup" &&
+                    meta.action === "input-change"
+                  ) {
+                    debounceFetch(field.name, () =>
+                      loadFieldOptions(field, inputValue)
+                    );
+                  }
+                }}
+                onChange={(selected) =>
+                  handleFieldChange(field.name, selected ? selected.value : "")
+                }
+                onCreateOption={(inputValue) =>
+                  handleFieldChange(field.name, inputValue)
+                }
+                placeholder={
+                  field.placeholder ||
+                  `Select or type ${field.label || field.name}`
+                }
+                isClearable
+                isDisabled={disabled || field.readOnly}
+                isLoading={!!loadingFields[field.name]}
+                openMenuOnFocus
+                openMenuOnClick
+                formatCreateLabel={(inputValue) => `Use "${inputValue}"`}
+                noOptionsMessage={() =>
+                  disabled
+                    ? "Select previous fields first"
+                    : loadingFields[field.name]
+                      ? "Loading..."
+                      : "No matching options"
+                }
+                filterOption={(candidate, inputValue) => {
+                  if (!inputValue) return true;
+                  return candidate.label
+                    .toLowerCase()
+                    .includes(inputValue.toLowerCase());
+                }}
+              />
+            ) : (
+              <input
+                id={field.name}
+                className="input"
+                type="text"
+                value={currentValue}
+                onChange={(e) => handleFieldChange(field.name, e.target.value)}
+                placeholder={field.placeholder || field.label || field.name}
+                disabled={disabled || field.readOnly}
+                readOnly={field.readOnly}
+              />
+            )}
+          </div>
+        );
+      })}
 
       <button className="button primary" type="submit" disabled={submitting}>
         {submitting ? "Saving..." : "Save Address"}
       </button>
     </form>
-  );
+
+  )
+
 };
 
 export default DynamicAddressForm;
-

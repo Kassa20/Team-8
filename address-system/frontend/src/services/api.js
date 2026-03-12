@@ -23,5 +23,12 @@ export const createAddress = (payload) =>
 export const searchAddresses = (params) =>
   api.get("/api/addresses/search", { params });
 
+export const fetchAddressOptions = (params) =>
+  api.get("/api/addresses/options", { params });
+
+export const resolveAddress = (params) =>
+  api.get("/api/addresses/resolve", { params });
+
+
 export default api;
 
