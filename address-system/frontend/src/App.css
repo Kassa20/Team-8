@@ -113,6 +113,30 @@
   margin-left: 4px;
 }
 
+.country-checkboxes {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 4px 16px;
+  border: 1px solid #1f2937;
+  border-radius: 8px;
+  padding: 10px 14px;
+  margin: 0 0 12px;
+}
+
+.country-checkboxes legend {
+  font-size: 0.9rem;
+  color: #9ca3af;
+  padding: 0 4px;
+}
+
+.checkbox-label {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 0.9rem;
+  cursor: pointer;
+}
+
 .search-form {
   display: grid;
   grid-template-columns: repeat(4, minmax(0, 1fr));

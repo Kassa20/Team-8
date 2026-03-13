@@ -41,6 +41,19 @@ const GlobalAddressSearch = ({ refreshToken, countries = [] }) => {
   return (
     <div className="card">
       <h2> Global Search Addresses</h2>
+      <fieldset className="country-checkboxes">
+        <legend>Filter by country</legend>
+        {countries.map((c) => (
+          <label key={c.code} className="checkbox-label">
+            <input
+              type="checkbox"
+              checked={selectedCountries.includes(c.code)}
+              onChange={() => toggleCountry(c.code)}
+            />
+            {c.name}
+          </label>
+        ))}
+      </fieldset>
       <form className="search-form" onSubmit={handleSubmit}>
         <input
           className="input"
@@ -54,19 +67,6 @@ const GlobalAddressSearch = ({ refreshToken, countries = [] }) => {
           value={query.city}
           onChange={(e) => handleChange("city", e.target.value)}
         />
-        <fieldset className="country-checkboxes">
-          <legend>Filter by country</legend>
-          {countries.map((c) => (
-            <label key={c.code} className="checkbox-label">
-              <input
-                type="checkbox"
-                checked={selectedCountries.includes(c.code)}
-                onChange={() => toggleCountry(c.code)}
-              />
-              {c.name}
-            </label>
-          ))}
-        </fieldset>
         <button type="submit" className="button">
           {loading ? "Searching..." : "Search"}
         </button>
