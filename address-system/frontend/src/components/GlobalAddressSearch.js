@@ -1,8 +1,9 @@
-import React, { useEffect, useState } from "react";
+import React, { useState } from "react";
 import { searchAddresses } from "../services/api";
 
-const GlobalAddressSearch = ({ refreshToken }) => {
-  const [query, setQuery] = useState({ name: "", city: "", country: "" });
+const GlobalAddressSearch = ({ refreshToken, countries = [] }) => {
+  const [query, setQuery] = useState({ name: "", city: "" });
+  const [selectedCountries, setSelectedCountries] = useState([]);
   const [results, setResults] = useState([]);
   const [loading, setLoading] = useState(false);
 
@@ -12,7 +13,7 @@ const GlobalAddressSearch = ({ refreshToken }) => {
       const params = {};
       if (query.name) params.name = query.name;
       if (query.city) params.city = query.city;
-      if (query.country) params.country = query.country;
+      if (selectedCountries.length > 0) params.country = selectedCountries.join(",");
       const res = await searchAddresses(params);
       setResults(res.data || []);
     } catch (err) {
@@ -22,14 +23,14 @@ const GlobalAddressSearch = ({ refreshToken }) => {
     }
   };
 
-  //useEffect(() => {
-  // Refresh search when a new address is created
-  //runSearch();
-  // eslint-disable-next-line react-hooks/exhaustive-deps
-  //}, [refreshToken]);
-
   const handleChange = (field, value) => {
     setQuery((prev) => ({ ...prev, [field]: value }));
+  };
+
+  const toggleCountry = (code) => {
+    setSelectedCountries((prev) =>
+      prev.includes(code) ? prev.filter((c) => c !== code) : [...prev, code]
+    );
   };
 
   const handleSubmit = (e) => {
@@ -53,12 +54,19 @@ const GlobalAddressSearch = ({ refreshToken }) => {
           value={query.city}
           onChange={(e) => handleChange("city", e.target.value)}
         />
-        <input
-          className="input"
-          placeholder="Search by country code"
-          value={query.country}
-          onChange={(e) => handleChange("country", e.target.value)}
-        />
+        <fieldset className="country-checkboxes">
+          <legend>Filter by country</legend>
+          {countries.map((c) => (
+            <label key={c.code} className="checkbox-label">
+              <input
+                type="checkbox"
+                checked={selectedCountries.includes(c.code)}
+                onChange={() => toggleCountry(c.code)}
+              />
+              {c.name}
+            </label>
+          ))}
+        </fieldset>
         <button type="submit" className="button">
           {loading ? "Searching..." : "Search"}
         </button>

@@ -1,14 +1,35 @@
-import React, { useState } from "react";
+import React, { useEffect, useState } from "react";
 import CountrySelector from "../components/CountrySelector";
 import DynamicAddressForm from "../components/DynamicAddressForm";
 import AddressSearch from "../components/AddressSearch";
 import GlobalAddressSearch from "../components/GlobalAddressSearch";
+import { fetchCountries } from "../services/api";
 
 
 const HomePage = () => {
+  const [countries, setCountries] = useState([]);
+  const [countriesLoading, setCountriesLoading] = useState(false);
+  const [countriesError, setCountriesError] = useState("");
   const [country, setCountry] = useState("");
   const [refreshToken, setRefreshToken] = useState(0);
   const [latestCreatedAddress, setLatestCreatedAddress] = useState(null);
+
+  useEffect(() => {
+    const loadCountries = async () => {
+      setCountriesLoading(true);
+      setCountriesError("");
+      try {
+        const res = await fetchCountries();
+        setCountries(res.data || []);
+      } catch (err) {
+        console.error("Failed to load countries", err);
+        setCountriesError("Could not load countries. Make sure backend is running on port 5000.");
+      } finally {
+        setCountriesLoading(false);
+      }
+    };
+    loadCountries();
+  }, []);
 
   const handleCreated = () => {
     setRefreshToken((x) => x + 1);
@@ -27,7 +48,13 @@ const HomePage = () => {
         <section className="left-panel">
           <div className="card">
             <h2>Select Country</h2>
-            <CountrySelector value={country} onChange={setCountry} />
+            <CountrySelector
+              value={country}
+              onChange={setCountry}
+              countries={countries}
+              loading={countriesLoading}
+              error={countriesError}
+            />
           </div>
 
           <DynamicAddressForm
@@ -54,7 +81,7 @@ const HomePage = () => {
 
         <section className="right-panel">
           <AddressSearch refreshToken={refreshToken} />
-          <GlobalAddressSearch refreshToken={refreshToken} />
+          <GlobalAddressSearch refreshToken={refreshToken} countries={countries} />
         </section>
       </main>
     </div>

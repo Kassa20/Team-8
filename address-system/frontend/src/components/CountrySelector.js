@@ -1,27 +1,6 @@
-import React, { useEffect, useState } from "react";
-import { fetchCountries } from "../services/api";
+import React from "react";
 
-const CountrySelector = ({ value, onChange }) => {
-  const [countries, setCountries] = useState([]);
-  const [loading, setLoading] = useState(false);
-  const [error, setError] = useState("");
-
-  useEffect(() => {
-    const load = async () => {
-      setLoading(true);
-      setError("");
-      try {
-        const res = await fetchCountries();
-        setCountries(res.data || []);
-      } catch (err) {
-        console.error("Failed to load countries", err);
-        setError("Could not load countries. Make sure backend is running on port 5000.");
-      } finally {
-        setLoading(false);
-      }
-    };
-    load();
-  }, []);
+const CountrySelector = ({ value, onChange, countries = [], loading = false, error = "" }) => {
 
   return (
     <div className="form-group">
