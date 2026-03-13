@@ -36,7 +36,8 @@ exports.searchAddresses = async (req, res) => {
       filter["address.city"] = { $regex: city, $options: "i" };
     }
     if (country) {
-      filter.country = country.toUpperCase();
+      const codes = country.split(",").map((c) => c.trim().toUpperCase());
+      filter.country = { $in: codes };
     }
 
     const results = await Address.find(filter).sort({ createdAt: -1 }).limit(100);
