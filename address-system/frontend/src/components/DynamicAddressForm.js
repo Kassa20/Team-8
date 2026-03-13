@@ -434,10 +434,6 @@ const DynamicAddressForm = ({ selectedCountry, onCreated }) => {
           </div>
         );
       })}
-
-      <button className="button primary" type="submit" disabled={submitting}>
-        {submitting ? "Saving..." : "Save Address"}
-      </button>
     </form>
 
   )
