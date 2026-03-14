@@ -11,10 +11,16 @@ const AddressSearch = ({ refreshToken }) => {
     try {
       const params = {};
       if (query.name) params.name = query.name;
-      if (query.city) params.city = query.city;
+      if (query.city) params.address = query.city;
       if (query.country) params.country = query.country;
+
       const res = await searchAddresses(params);
-      setResults(res.data || []);
+      const rawData = res.data || [];
+      const uniqueData = rawData.filter((item, index, self) =>
+        index === self.findIndex((t) => t._id === item._id)
+      );
+      
+      setResults(uniqueData);
     } catch (err) {
       console.error("Search failed", err);
     } finally {
@@ -49,7 +55,7 @@ const AddressSearch = ({ refreshToken }) => {
         />
         <input
           className="input"
-          placeholder="Search by city"
+          placeholder="Search by city, street, or zip"
           value={query.city}
           onChange={(e) => handleChange("city", e.target.value)}
         />
@@ -90,7 +96,7 @@ const AddressSearch = ({ refreshToken }) => {
           {results.length === 0 && !loading && (
             <tr>
               <td colSpan="3" className="hint">
-                No results yet. Try searching by name, city, or country.
+                No results yet. Try searching by name, address, or country.
               </td>
             </tr>
           )}
@@ -101,4 +107,3 @@ const AddressSearch = ({ refreshToken }) => {
 };
 
 export default AddressSearch;
-
