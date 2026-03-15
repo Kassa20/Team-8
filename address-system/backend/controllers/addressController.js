@@ -27,6 +27,10 @@ exports.createAddress = async (req, res) => {
 exports.searchAddresses = async (req, res) => {
   try {
     const { name, address, country } = req.query;
+    const page = Math.max(1, parseInt(req.query.page, 10) || 1);
+    const limit = Math.min(100, Math.max(1, parseInt(req.query.limit, 10) || 20));
+    const skip = (page - 1) * limit;
+
     const filter = {};
 
     if (name) {
@@ -52,7 +56,7 @@ exports.searchAddresses = async (req, res) => {
       filter.country = { $in: codes };
     }
 
-    const results = await Address.aggregate([
+    const [result] = await Address.aggregate([
       { $match: filter },
       { $sort: { createdAt: -1 } },
       { $group: {
@@ -60,10 +64,22 @@ exports.searchAddresses = async (req, res) => {
         doc: { $first: "$$ROOT" }
       }},
       { $replaceRoot: { newRoot: "$doc" } },
-      { $limit: 100 }
+      { $facet: {
+        data: [{ $skip: skip }, { $limit: limit }],
+        totalCount: [{ $count: "count" }],
+      }},
     ]);
 
-    res.json(results);
+    const data = result.data;
+    const totalCount = result.totalCount[0]?.count || 0;
+
+    res.json({
+      data,
+      page,
+      limit,
+      totalCount,
+      totalPages: Math.ceil(totalCount / limit),
+    });
   } catch (error) {
     res.status(500).json({ message: "Failed to search addresses" });
   }

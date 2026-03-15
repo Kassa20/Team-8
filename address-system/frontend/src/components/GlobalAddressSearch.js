@@ -1,21 +1,27 @@
 import React, { useState } from "react";
 import { searchAddresses } from "../services/api";
 
+const PAGE_SIZE = 20;
+
 const GlobalAddressSearch = ({ refreshToken, countries = [] }) => {
   const [query, setQuery] = useState({ name: "", address: "" });
   const [selectedCountries, setSelectedCountries] = useState([]);
   const [results, setResults] = useState([]);
   const [loading, setLoading] = useState(false);
+  const [page, setPage] = useState(1);
+  const [totalPages, setTotalPages] = useState(1);
 
-  const runSearch = async () => {
+  const runSearch = async (targetPage = 1) => {
     setLoading(true);
     try {
-      const params = {};
+      const params = { page: targetPage, limit: PAGE_SIZE };
       if (query.name) params.name = query.name;
       if (query.address) params.address = query.address;
       if (selectedCountries.length > 0) params.country = selectedCountries.join(",");
       const res = await searchAddresses(params);
-      setResults(res.data || []);
+      setResults(res.data.data || []);
+      setTotalPages(res.data.totalPages || 1);
+      setPage(targetPage);
     } catch (err) {
       console.error("Search failed", err);
     } finally {
@@ -104,6 +110,13 @@ const GlobalAddressSearch = ({ refreshToken, countries = [] }) => {
           )}
         </tbody>
       </table>
+      {totalPages > 1 && (
+        <div className="pagination">
+          <button className="button" disabled={page <= 1} onClick={() => runSearch(page - 1)}>Previous</button>
+          <span>Page {page} of {totalPages}</span>
+          <button className="button" disabled={page >= totalPages} onClick={() => runSearch(page + 1)}>Next</button>
+        </div>
+      )}
     </div>
   );
 };
