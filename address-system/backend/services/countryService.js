@@ -2,8 +2,9 @@ const Country = require("../models/Country");
 
 // Simple service to ensure some default countries exist
 async function ensureDefaultCountries() {
-  //const existing = await Country.estimatedDocumentCount();
-  //if (existing > 0) return;
+  const existing = await Country.estimatedDocumentCount();
+  if (existing > 0) return;
+
   const defaultCountries = [
     {
       code: "US",
@@ -145,7 +146,6 @@ async function ensureDefaultCountries() {
     }
 
   ];
-  await Country.deleteMany({});
   await Country.insertMany(defaultCountries);
   console.log("default countries seeded");
 }

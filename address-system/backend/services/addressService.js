@@ -1,6 +1,8 @@
 const Address = require("../models/Address");
 
 async function ensureDefaultAddresses() {
+  const existing = await Address.estimatedDocumentCount();
+  if (existing > 0) return;
 
   const defaultAddresses = [
     {
