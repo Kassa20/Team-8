@@ -176,7 +176,7 @@ async function ensureDefaultAddresses() {
   ];
 
   await Address.insertMany(defaultAddresses);
-  console.log("default countries seeded");
+  console.log("default addresses seeded");
 }
 
 module.exports = { ensureDefaultAddresses };

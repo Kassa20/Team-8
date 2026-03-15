@@ -33,7 +33,19 @@ exports.searchAddresses = async (req, res) => {
       filter.name = { $regex: name, $options: "i" };
     }
     if (address) {
-      filter["address.street"] = { $regex: address, $options: "i" };
+      const regex = { $regex: address, $options: "i" };
+      filter.$or = [
+        { "address.street": regex },
+        { "address.city": regex },
+        { "address.state": regex },
+        { "address.zip": regex },
+        { "address.province": regex },
+        { "address.postalCode": regex },
+        { "address.postcode": regex },
+        { "address.county": regex },
+        { "address.region": regex },
+        { "address.prefecture": regex },
+      ];
     }
     if (country) {
       const codes = country.split(",").map((c) => c.trim().toUpperCase());

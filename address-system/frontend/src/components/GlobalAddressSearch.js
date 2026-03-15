@@ -2,7 +2,7 @@ import React, { useState } from "react";
 import { searchAddresses } from "../services/api";
 
 const GlobalAddressSearch = ({ refreshToken, countries = [] }) => {
-  const [query, setQuery] = useState({ name: "", city: "" });
+  const [query, setQuery] = useState({ name: "", address: "" });
   const [selectedCountries, setSelectedCountries] = useState([]);
   const [results, setResults] = useState([]);
   const [loading, setLoading] = useState(false);
@@ -12,7 +12,7 @@ const GlobalAddressSearch = ({ refreshToken, countries = [] }) => {
     try {
       const params = {};
       if (query.name) params.name = query.name;
-      if (query.city) params.city = query.city;
+      if (query.address) params.address = query.address;
       if (selectedCountries.length > 0) params.country = selectedCountries.join(",");
       const res = await searchAddresses(params);
       setResults(res.data || []);
@@ -63,9 +63,9 @@ const GlobalAddressSearch = ({ refreshToken, countries = [] }) => {
         />
         <input
           className="input"
-          placeholder="Search by city"
-          value={query.city}
-          onChange={(e) => handleChange("city", e.target.value)}
+          placeholder="Search by address (street, city, zip...)"
+          value={query.address}
+          onChange={(e) => handleChange("address", e.target.value)}
         />
         <button type="submit" className="button">
           {loading ? "Searching..." : "Search"}
