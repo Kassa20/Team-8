@@ -169,9 +169,7 @@ const DynamicAddressForm = ({ selectedCountry, onCreated }) => {
   };
 
   const tryResolveZip = async (nextFields) => {
-    const zipField = schema.find(
-      (field) => field.name === "zip" && field.autoFill
-    );
+    const zipField = schema.find((field) => field.autoFill);
     if (!zipField) return;
 
     const requiredDeps = zipField.dependsOn || [];
@@ -191,20 +189,21 @@ const DynamicAddressForm = ({ selectedCountry, onCreated }) => {
     });
 
     try {
-      setLoadingFields((prev) => ({ ...prev, zip: true }));
+      setLoadingFields((prev) => ({ ...prev, [zipField.name]: true }));
       const res = await resolveAddress(params);
-      const zip = res.data?.zip || "";
+      const postalValue = res.data?.postalCode || "";
+      const postalField = res.data?.field;
 
-      if (zip) {
+      if (postalValue && postalField) {
         setFields((prev) => ({
           ...prev,
-          zip,
+          [postalField]: postalValue,
         }));
       }
     } catch (err) {
       console.error("Failed to resolve zip", err);
     } finally {
-      setLoadingFields((prev) => ({ ...prev, zip: false }));
+      setLoadingFields((prev) => ({ ...prev, [zipField.name]: false }));
     }
   };
 
