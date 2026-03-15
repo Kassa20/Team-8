@@ -1,9 +1,9 @@
-import React, { useEffect, useState } from "react";
+import React, { useState } from "react";
 import { searchAddresses } from "../services/api";
 
 const PAGE_SIZE = 20;
 
-const AddressSearch = ({ refreshToken }) => {
+const AddressSearch = () => {
   const [query, setQuery] = useState({ name: "", address: "", country: "" });
   const [results, setResults] = useState([]);
   const [loading, setLoading] = useState(false);
@@ -27,12 +27,6 @@ const AddressSearch = ({ refreshToken }) => {
       setLoading(false);
     }
   };
-
-  //useEffect(() => {
-  // Refresh search when a new address is created
-  //runSearch();
-  // eslint-disable-next-line react-hooks/exhaustive-deps
-  //}, [refreshToken]);
 
   const handleChange = (field, value) => {
     setQuery((prev) => ({ ...prev, [field]: value }));

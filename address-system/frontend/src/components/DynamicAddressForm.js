@@ -2,12 +2,11 @@ import React, { useEffect, useRef, useState } from "react";
 import CreatableSelect from "react-select/creatable";
 import {
   fetchCountrySchema,
-  createAddress,
   fetchAddressOptions,
   resolveAddress,
 } from "../services/api";
 
-const DynamicAddressForm = ({ selectedCountry, onCreated }) => {
+const DynamicAddressForm = ({ selectedCountry }) => {
   const [schema, setSchema] = useState([]);
   const [name, setName] = useState("");
   const [nameOptions, setNameOptions] = useState([]);
@@ -15,7 +14,6 @@ const DynamicAddressForm = ({ selectedCountry, onCreated }) => {
   const [fieldOptions, setFieldOptions] = useState({});
   const [loadingFields, setLoadingFields] = useState({});
   const [error, setError] = useState("");
-  const [submitting, setSubmitting] = useState(false);
   const debounceTimers = useRef({});
 
 
@@ -239,70 +237,13 @@ const DynamicAddressForm = ({ selectedCountry, onCreated }) => {
     await tryResolveZip(nextFields);
   };
 
-  const handleSubmit = async (e) => {
-    e.preventDefault();
-    setError("");
-
-    if (!name.trim()) {
-      setError("Name is required.");
-      return;
-    }
-
-    const missingRequired = schema.filter(
-      (field) => field.required && !String(fields[field.name] || "").trim()
-    );
-
-    if (missingRequired.length > 0) {
-      setError("Please fill all required address fields.");
-      return;
-    }
-
-    try {
-      setSubmitting(true);
-
-      const res = await createAddress({
-        name,
-        country: selectedCountry,
-        address: fields,
-      });
-
-      setName("");
-      setNameOptions([]);
-
-      const resetFields = {};
-      const resetOptions = {};
-
-      schema.forEach((field) => {
-        resetFields[field.name] = field.defaultValue || "";
-        resetOptions[field.name] =
-          field.source === "static"
-            ? (field.options || []).map((option) =>
-              typeof option === "string"
-                ? { value: option, label: option }
-                : { value: option.value, label: option.label }
-            )
-            : [];
-      });
-
-      setFields(resetFields);
-      setFieldOptions(resetOptions);
-
-      if (onCreated) onCreated(res.data);
-    } catch (err) {
-      console.error("Failed to create address", err);
-      setError("Failed to save address. Please try again.");
-    } finally {
-      setSubmitting(false);
-    }
-  };
-
   if (!selectedCountry) {
     return <p className="hint">Select a country to enter an address.</p>;
   }
 
   return (
-    <form className="card" onSubmit={handleSubmit}>
-      <h2>Add Address</h2>
+    <form className="card">
+      <h2>Validate Address</h2>
 
       {error && <div className="error">{error}</div>}
 

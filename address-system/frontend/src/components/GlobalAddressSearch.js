@@ -3,7 +3,7 @@ import { searchAddresses } from "../services/api";
 
 const PAGE_SIZE = 20;
 
-const GlobalAddressSearch = ({ refreshToken, countries = [] }) => {
+const GlobalAddressSearch = ({ countries = [] }) => {
   const [query, setQuery] = useState({ name: "", address: "" });
   const [selectedCountries, setSelectedCountries] = useState([]);
   const [results, setResults] = useState([]);

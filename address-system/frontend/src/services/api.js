@@ -17,9 +17,6 @@ export const fetchCountries = () => api.get("/api/countries");
 export const fetchCountrySchema = (code) =>
   api.get(`/api/countries/${code}/schema`);
 
-export const createAddress = (payload) =>
-  api.post("/api/addresses", payload);
-
 export const searchAddresses = (params) =>
   api.get("/api/addresses/search", { params });
 

@@ -11,8 +11,6 @@ const HomePage = () => {
   const [countriesLoading, setCountriesLoading] = useState(false);
   const [countriesError, setCountriesError] = useState("");
   const [country, setCountry] = useState("");
-  const [refreshToken, setRefreshToken] = useState(0);
-  const [latestCreatedAddress, setLatestCreatedAddress] = useState(null);
 
   useEffect(() => {
     const loadCountries = async () => {
@@ -30,10 +28,6 @@ const HomePage = () => {
     };
     loadCountries();
   }, []);
-
-  const handleCreated = () => {
-    setRefreshToken((x) => x + 1);
-  };
 
   return (
     <div className="layout">
@@ -57,31 +51,11 @@ const HomePage = () => {
             />
           </div>
 
-          <DynamicAddressForm
-            selectedCountry={country}
-            onCreated={(createdAddress) => {
-              setLatestCreatedAddress(createdAddress);
-              handleCreated();
-            }}
-          />
+          <DynamicAddressForm selectedCountry={country} />
         </section>
-        {latestCreatedAddress && (
-          <div className="card">
-            <h2>Recently Saved Address</h2>
-            <p><strong>Name:</strong> {latestCreatedAddress.name}</p>
-            <p><strong>Country:</strong> {latestCreatedAddress.country}</p>
-
-            {Object.entries(latestCreatedAddress.address || {}).map(([key, value]) => (
-              <p key={key}>
-                <strong>{key}:</strong> {value}
-              </p>
-            ))}
-          </div>
-        )}
-
         <section className="right-panel">
-          <AddressSearch refreshToken={refreshToken} />
-          <GlobalAddressSearch refreshToken={refreshToken} countries={countries} />
+          <AddressSearch />
+          <GlobalAddressSearch countries={countries} />
         </section>
       </main>
     </div>
