@@ -23,24 +23,33 @@ exports.createAddress = async (req, res) => {
   }
 };
 
-// Search addresses by name, city, or country
+// Search addresses by name, address (street), or country
 exports.searchAddresses = async (req, res) => {
   try {
-    const { name, city, country } = req.query;
+    const { name, address, country } = req.query;
     const filter = {};
 
     if (name) {
       filter.name = { $regex: name, $options: "i" };
     }
-    if (city) {
-      filter["address.city"] = { $regex: city, $options: "i" };
+    if (address) {
+      filter["address.street"] = { $regex: address, $options: "i" };
     }
     if (country) {
       const codes = country.split(",").map((c) => c.trim().toUpperCase());
       filter.country = { $in: codes };
     }
 
-    const results = await Address.find(filter).sort({ createdAt: -1 }).limit(100);
+    const results = await Address.aggregate([
+      { $match: filter },
+      { $sort: { createdAt: -1 } },
+      { $group: {
+        _id: { name: "$name", country: "$country", street: "$address.street" },
+        doc: { $first: "$$ROOT" }
+      }},
+      { $replaceRoot: { newRoot: "$doc" } },
+      { $limit: 100 }
+    ]);
 
     res.json(results);
   } catch (error) {

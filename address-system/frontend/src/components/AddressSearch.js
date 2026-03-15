@@ -2,7 +2,7 @@ import React, { useEffect, useState } from "react";
 import { searchAddresses } from "../services/api";
 
 const AddressSearch = ({ refreshToken }) => {
-  const [query, setQuery] = useState({ name: "", city: "", country: "" });
+  const [query, setQuery] = useState({ name: "", address: "", country: "" });
   const [results, setResults] = useState([]);
   const [loading, setLoading] = useState(false);
 
@@ -11,7 +11,7 @@ const AddressSearch = ({ refreshToken }) => {
     try {
       const params = {};
       if (query.name) params.name = query.name;
-      if (query.city) params.city = query.city;
+      if (query.address) params.address = query.address;
       if (query.country) params.country = query.country;
       const res = await searchAddresses(params);
       setResults(res.data || []);
@@ -49,9 +49,9 @@ const AddressSearch = ({ refreshToken }) => {
         />
         <input
           className="input"
-          placeholder="Search by city"
-          value={query.city}
-          onChange={(e) => handleChange("city", e.target.value)}
+          placeholder="Search by address (partial ok)"
+          value={query.address}
+          onChange={(e) => handleChange("address", e.target.value)}
         />
         <input
           className="input"
@@ -90,7 +90,7 @@ const AddressSearch = ({ refreshToken }) => {
           {results.length === 0 && !loading && (
             <tr>
               <td colSpan="3" className="hint">
-                No results yet. Try searching by name, city, or country.
+                No results yet. Try searching by name, address, or country.
               </td>
             </tr>
           )}
