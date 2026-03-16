@@ -1,4 +1,5 @@
 const Address = require("../models/Address");
+const Country = require("../models/Country");
 
 // Create a new address entry
 exports.createAddress = async (req, res) => {
@@ -6,14 +7,14 @@ exports.createAddress = async (req, res) => {
     const { name, country, address } = req.body;
 
     if (!name || !country || !address) {
-      return res.status(400).json({ message: "name, country and address are required" });
+      return res
+        .status(400)
+        .json({ message: "name, country and address are required" });
     }
-
-    // TODO: Add country-specific validation for address fields
 
     const newAddress = await Address.create({
       name,
-      country,
+      country: country.toUpperCase(),
       address,
     });
 
@@ -28,7 +29,10 @@ exports.searchAddresses = async (req, res) => {
   try {
     const { name, address, country } = req.query;
     const page = Math.max(1, parseInt(req.query.page, 10) || 1);
-    const limit = Math.min(100, Math.max(1, parseInt(req.query.limit, 10) || 20));
+    const limit = Math.min(
+      100,
+      Math.max(1, parseInt(req.query.limit, 10) || 20)
+    );
     const skip = (page - 1) * limit;
 
     const filter = {};
@@ -36,6 +40,7 @@ exports.searchAddresses = async (req, res) => {
     if (name) {
       filter.name = { $regex: name, $options: "i" };
     }
+
     if (address) {
       const regex = { $regex: address, $options: "i" };
       filter.$or = [
@@ -51,6 +56,7 @@ exports.searchAddresses = async (req, res) => {
         { "address.prefecture": regex },
       ];
     }
+
     if (country) {
       const codes = country.split(",").map((c) => c.trim().toUpperCase());
       filter.country = { $in: codes };
@@ -59,19 +65,27 @@ exports.searchAddresses = async (req, res) => {
     const [result] = await Address.aggregate([
       { $match: filter },
       { $sort: { createdAt: -1 } },
-      { $group: {
-        _id: { name: "$name", country: "$country", street: "$address.street" },
-        doc: { $first: "$$ROOT" }
-      }},
+      {
+        $group: {
+          _id: {
+            name: "$name",
+            country: "$country",
+            street: "$address.street",
+          },
+          doc: { $first: "$$ROOT" },
+        },
+      },
       { $replaceRoot: { newRoot: "$doc" } },
-      { $facet: {
-        data: [{ $skip: skip }, { $limit: limit }],
-        totalCount: [{ $count: "count" }],
-      }},
+      {
+        $facet: {
+          data: [{ $skip: skip }, { $limit: limit }],
+          totalCount: [{ $count: "count" }],
+        },
+      },
     ]);
 
-    const data = result.data;
-    const totalCount = result.totalCount[0]?.count || 0;
+    const data = result?.data || [];
+    const totalCount = result?.totalCount?.[0]?.count || 0;
 
     res.json({
       data,
@@ -84,9 +98,31 @@ exports.searchAddresses = async (req, res) => {
     res.status(500).json({ message: "Failed to search addresses" });
   }
 };
+
+async function getCountrySchemaMap(countryCode) {
+  const country = await Country.findOne(
+    { code: countryCode.toUpperCase() },
+    { _id: 0, fields: 1 }
+  ).lean();
+
+  if (!country) return null;
+
+  const fields = country.fields || [];
+  const byName = Object.fromEntries(fields.map((f) => [f.name, f]));
+
+  return {
+    fields,
+    byName,
+    postalField:
+      fields.find((f) => f.autoFill)?.name ||
+      ["zip", "postalCode", "postcode"].find((name) => byName[name]) ||
+      null,
+  };
+}
+
 exports.getAddressOptions = async (req, res) => {
   try {
-    const { country, field, q = "", name, street, city, state } = req.query;
+    const { country, field, q = "" } = req.query;
 
     if (!country || !field) {
       return res
@@ -95,23 +131,32 @@ exports.getAddressOptions = async (req, res) => {
     }
 
     const normalizedCountry = country.toUpperCase();
+    const schemaMap = await getCountrySchemaMap(normalizedCountry);
+
+    if (!schemaMap) {
+      return res.status(404).json({ message: "Country not found" });
+    }
+
+    const requestedField = schemaMap.byName[field];
+    if (!requestedField && field !== "name") {
+      return res.status(400).json({ message: "Unsupported field" });
+    }
+
     const filter = { country: normalizedCountry };
 
-
-    if (field !== "name" && name) {
-      filter.name = name;
+    if (field !== "name" && req.query.name) {
+      filter.name = req.query.name;
     }
 
-    if ((field === "city" || field === "state" || field === "zip") && street) {
-      filter["address.street"] = street;
-    }
+    const dependsOn = requestedField?.dependsOn || [];
 
-    if ((field === "state" || field === "zip") && city) {
-      filter["address.city"] = city;
-    }
+    for (const dep of dependsOn) {
+      if (dep === "name") continue;
 
-    if (field === "zip" && state) {
-      filter["address.state"] = state;
+      const depValue = req.query[dep];
+      if (depValue) {
+        filter[`address.${dep}`] = depValue;
+      }
     }
 
     const results = await Address.find(filter).lean();
@@ -120,16 +165,8 @@ exports.getAddressOptions = async (req, res) => {
 
     if (field === "name") {
       rawOptions = results.map((item) => item.name);
-    } else if (field === "street") {
-      rawOptions = results.map((item) => item.address?.street);
-    } else if (field === "city") {
-      rawOptions = results.map((item) => item.address?.city);
-    } else if (field === "state") {
-      rawOptions = results.map((item) => item.address?.state);
-    } else if (field === "zip") {
-      rawOptions = results.map((item) => item.address?.zip);
     } else {
-      return res.status(400).json({ message: "Unsupported field" });
+      rawOptions = results.map((item) => item.address?.[field]);
     }
 
     const searchText = String(q).trim().toLowerCase();
@@ -137,7 +174,7 @@ exports.getAddressOptions = async (req, res) => {
     const filteredOptions = rawOptions
       .filter(Boolean)
       .filter((value) =>
-        searchText ? value.toLowerCase().includes(searchText) : true
+        searchText ? String(value).toLowerCase().includes(searchText) : true
       );
 
     const uniqueOptions = [...new Set(filteredOptions)];
@@ -150,32 +187,62 @@ exports.getAddressOptions = async (req, res) => {
 
 exports.resolveAddress = async (req, res) => {
   try {
-    const { country, name, street, city, state } = req.query;
+    const { country, name } = req.query;
 
-    if (!country || !name || !street || !city || !state) {
-      return res.status(400).json({
-        message: "country, name, street, city and state are required",
-      });
+    if (!country || !name) {
+      return res
+        .status(400)
+        .json({ message: "country and name are required" });
     }
 
-    const match = await Address.findOne({
-      country: country.toUpperCase(),
+    const normalizedCountry = country.toUpperCase();
+    const schemaMap = await getCountrySchemaMap(normalizedCountry);
+
+    if (!schemaMap) {
+      return res.status(404).json({ message: "Country not found" });
+    }
+
+    const postalField = schemaMap.postalField;
+
+    if (!postalField) {
+      return res
+        .status(400)
+        .json({ message: "No postal field configured for this country" });
+    }
+
+    const filter = {
+      country: normalizedCountry,
       name,
-      "address.street": street,
-      "address.city": city,
-      "address.state": state,
-    }).lean();
+    };
+
+    const postalSchemaField = schemaMap.byName[postalField];
+    const dependsOn = postalSchemaField?.dependsOn || [];
+
+    for (const dep of dependsOn) {
+      if (dep === "name") continue;
+
+      const depValue = req.query[dep];
+      if (!depValue) {
+        return res.status(400).json({
+          message: `Missing required field: ${dep}`,
+        });
+      }
+
+      filter[`address.${dep}`] = depValue;
+    }
+
+    const match = await Address.findOne(filter).lean();
 
     if (!match) {
-      return res.json({ zip: "" });
+      return res.json({ postalCode: "", field: postalField });
     }
 
     res.json({
-      zip: match.address?.zip || "",
+      postalCode: match.address?.[postalField] || "",
+      field: postalField,
       address: match,
     });
   } catch (error) {
     res.status(500).json({ message: "Failed to resolve address" });
   }
 };
-
