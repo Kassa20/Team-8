@@ -1,5 +1,9 @@
 # Address Management System
 
+<img width="943" height="474" alt="image" src="https://github.com/user-attachments/assets/d59ed146-c10b-4eb3-8e41-53fddbb46d4e" />
+
+
+
 A full-stack web application for managing and searching country-specific addresses with dynamic form generation. The system supports 7 countries (US, Canada, UK, Germany, France, Japan, Australia), each with its own address schema — fields, validation rules, and dependencies adapt automatically based on the selected country.
 
 ## Features
